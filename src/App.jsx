@@ -9,7 +9,7 @@ import "./App.css";
  */
 
 // ===== Paste your Gemini API key here for local testing (NOT SAFE for production) =====
-const API_KEY = "AIzaSyCGD1Gb0zxcsb4f61GRj3cIsnse8Hk2LJk";
+const API_KEY = "";
 // ======================================================================================
 const DEFAULT_MODEL = "gemini-2.0-flash";
 
