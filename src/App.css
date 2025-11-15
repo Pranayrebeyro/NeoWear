@@ -1,5 +1,6 @@
-/* Final App.css — stronger layout constraints to prevent vendor panel overlay */
+/* TryMate final App.css — responsive and vendor safe */
 
+/* Theme variables */
 :root{
   --bg: #f5f8ff;
   --card: #ffffff;
@@ -31,13 +32,12 @@ html,body,#root{height:100%}
 body{
   margin:0;
   font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  background: radial-gradient(1200px 600px at 10% 10%, rgba(99,102,241,0.06), transparent),
-              linear-gradient(180deg,var(--bg), #fff);
+  background: radial-gradient(1200px 600px at 10% 10%, rgba(99,102,241,0.06), transparent), linear-gradient(180deg,var(--bg), #fff);
   color:var(--text);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
   padding:20px;
-  overflow-x: hidden; /* block horizontal overflow */
+  overflow-x:hidden;
 }
 
 /* Header */
@@ -50,24 +50,21 @@ body{
 .theme-toggle{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px 10px;border-radius:8px;cursor:pointer}
 .theme-toggle:hover{opacity:0.9}
 
-/* Main layout:
-   - Left column shrinkable (minmax(0,1fr))
-   - Right column fixed to 420px and cannot grow
-*/
+/* Main grid */
 .tm-main{
   display:grid;
-  grid-template-columns: minmax(0, 1fr) 420px;
+  grid-template-columns: minmax(0,1fr) 420px;
   gap:20px;
   max-width:1200px;
   margin:0 auto;
   align-items:start;
-  padding: 0 12px;
+  padding:0 12px;
   min-width:0;
 }
 
 /* Left column */
 .left-col{display:flex;flex-direction:column;gap:14px;min-width:0}
-.upload-card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,0.02);min-height:220px;display:flex;flex-direction:column;gap:12px;justify-content:center;align-items:center;cursor:pointer;position:relative;transition:transform .14s ease, box-shadow .14s ease}
+.upload-card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,0.02);min-height:220px;display:flex;flex-direction:column;gap:12px;justify-content:center;align-items:center;cursor:pointer;position:relative;transition:transform .14s ease,box-shadow .14s ease}
 .upload-card:focus{outline:3px solid rgba(99,102,241,0.12)}
 .upload-card:hover{transform:translateY(-4px)}
 .upload-card.drag-over{box-shadow:0 18px 40px rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.25)}
@@ -98,18 +95,8 @@ body{
 .hint{font-size:13px;color:var(--muted)}
 .hint.strong{font-weight:700;color:var(--text)}
 
-/* Right column (fixed) */
-.right-col{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  min-width:0;
-  flex:0 0 420px;
-  width:420px;
-  max-width:420px;
-  box-sizing:border-box;
-  align-self:start; /* keep right column aligned to top of grid row */
-}
+/* Right column */
+.right-col{display:flex;flex-direction:column;gap:14px;min-width:0;flex:0 0 420px;width:420px;max-width:420px;box-sizing:border-box;align-self:start}
 
 /* Panels */
 .panel{background:var(--card);padding:14px;border-radius:12px;box-shadow:var(--shadow);min-height:160px;overflow:visible}
@@ -153,47 +140,18 @@ body{
 /* Errors */
 .error{color:var(--danger);font-weight:700;margin-top:8px}
 
-/* Vendor panel: make absolutely sure children cannot grow the right column */
-.vendor-panel{
-  max-height:520px;
-  overflow:auto;
-  box-sizing:border-box;
-  width:100%;
-  position:relative;
-  z-index:1; /* stays within flow */
-}
+/* Vendor panel safety */
+.vendor-panel{max-height:520px;overflow:auto;box-sizing:border-box;width:100%;position:relative;z-index:1}
+.vendor-panel *{min-width:0}
+.vendor-panel .select, .vendor-panel input[type="text"], .vendor-panel textarea, .vendor-panel input[type="file"]{max-width:100%;min-width:0;box-sizing:border-box}
+.vendor-panel input[type="file"]{display:block;width:100%}
+.vendor-panel form > div{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.vendor-panel ul li{word-break:break-word;overflow:hidden}
+.vendor-panel .select, .vendor-panel input, .vendor-panel textarea{overflow:hidden;text-overflow:ellipsis}
 
-/* allow nested children to shrink instead of growing the parent */
-.vendor-panel *{ min-width: 0; }
-
-/* ensure form controls are responsive and block-level where needed */
-.vendor-panel .select,
-.vendor-panel input[type="text"],
-.vendor-panel input[type="number"],
-.vendor-panel textarea,
-.vendor-panel input[type="file"]{
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-
-/* file input: block so it wraps below if necessary */
-.vendor-panel input[type="file"]{ display:block; width:100%; }
-
-/* inline groups wrap so they never push width */
-.vendor-panel form > div{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-
-/* ensure list items don't stretch the column */
-.vendor-panel ul li{ word-break:break-word; overflow:hidden; }
-
-/* make long text wrap/truncate */
-.vendor-panel .select,
-.vendor-panel input,
-.vendor-panel textarea{ overflow:hidden; text-overflow:ellipsis; }
-
-/* small screens: stack columns */
-@media (max-width: 980px) {
-  .tm-main{ grid-template-columns:1fr; padding-bottom:40px; }
-  .right-col{ width:100%; flex: 0 0 auto; }
-  .vendor-panel{ max-height:none; }
+/* Responsive */
+@media (max-width:980px){
+  .tm-main{grid-template-columns:1fr;padding-bottom:40px}
+  .right-col{width:100%;flex:0 0 auto}
+  .vendor-panel{max-height:none}
 }

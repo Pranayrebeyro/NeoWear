@@ -1,34 +1,38 @@
-import React, { useState, useRef, useEffect } from "react";
+// src/App.jsx
+import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 
 /**
- * TryMate - App.jsx (with optional client-side Gemini integration)
+ * TryMate - Final App.jsx (multimodal-ready)
  *
- * WARNING: Putting an API key here exposes it to anyone who can view your JS bundle.
- * Use only for local testing or quick demos. For production, put the key on a server.
+ * IMPORTANT:
+ * - Point PROXY_ENDPOINT to your backend server (the server provided earlier).
+ * - The server at /api/generate must accept { prompt, model, imageBase64 } and forward
+ *   to Google's multimodal endpoint (server/index.js provided).
+ *
+ * Usage:
+ * - Start server: cd server && npm run dev
+ * - Start frontend: npm run dev
+ * - Open http://localhost:5173
  */
 
-// ===== Paste your Gemini API key here for local testing (NOT SAFE for production) =====
-const API_KEY = "";
-// ======================================================================================
-const DEFAULT_MODEL = "gemini-2.0-flash";
+const DEFAULT_MODEL = "gemini-2.0-flash"; // label only; server uses model param
+const PROXY_ENDPOINT = "http://localhost:5000/api/generate"; // direct backend (no vite proxy)
 
 export default function App() {
   // UI state
   const [theme, setTheme] = useState(() => localStorage.getItem("tm_theme") || "light");
   const [image, setImage] = useState(null);
   const [category, setCategory] = useState("");
-  const [results, setResults] = useState([]); // array of strings
+  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const [error, setError] = useState("");
   const fileRef = useRef(null);
   const dropRef = useRef(null);
 
-  // Vendor dashboard state (keeps catalog)
-  const [isVendorOpen, setIsVendorOpen] = useState(() =>
-    JSON.parse(localStorage.getItem("tm_vendor_open") || "false")
-  );
+  // Vendor dashboard state
+  const [isVendorOpen, setIsVendorOpen] = useState(() => JSON.parse(localStorage.getItem("tm_vendor_open") || "false"));
   const [vendorItems, setVendorItems] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("tm_vendor_items") || "[]");
@@ -48,7 +52,7 @@ export default function App() {
   });
   const vendorFileRef = useRef(null);
 
-  // Persist theme and vendor state
+  // Persist theme & vendor items
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("tm_theme", theme);
@@ -62,10 +66,10 @@ export default function App() {
     localStorage.setItem("tm_vendor_open", JSON.stringify(isVendorOpen));
   }, [isVendorOpen]);
 
-  // Toast auto dismiss
+  // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
-    const id = setTimeout(() => setToast(null), 3500);
+    const id = setTimeout(() => setToast(null), 3200);
     return () => clearTimeout(id);
   }, [toast]);
 
@@ -73,7 +77,6 @@ export default function App() {
   useEffect(() => {
     const el = dropRef.current;
     if (!el) return;
-
     const onDragOver = (e) => {
       e.preventDefault();
       el.classList.add("drag-over");
@@ -135,10 +138,10 @@ export default function App() {
     setToast("Reset complete");
   };
 
-  // Local mock for recommendations (fallback)
+  // Local mock suggestions (fallback)
   const generateLocalMock = async () => {
-    await new Promise((r) => setTimeout(r, 600));
-    const tmpl = {
+    await new Promise((r) => setTimeout(r, 500));
+    const templates = {
       "T-Shirt": [
         "Pair with slim dark jeans and white canvas sneakers for everyday cool.",
         "Layer under a denim jacket with a neutral scarf for urban style.",
@@ -160,85 +163,69 @@ export default function App() {
         "Match with shorts and a casual tee for weekend energy.",
       ],
     };
-    return tmpl[category] || [
+    return templates[category] || [
       "Pair with dark jeans and crisp sneakers for a timeless look.",
       "Style with a neutral jacket and boots for elevated casual.",
       "Add a minimal accessory (watch or chain) to finish the outfit.",
     ];
   };
 
-  // Call the Generative API (client-side). If API_KEY is empty or call fails -> fallback to local mock.
-  const callGeminiGenerate = async ({ model = DEFAULT_MODEL, promptText = "", imageBase64 = null }) => {
-    if (!API_KEY || API_KEY.trim() === "" || API_KEY === "<PASTE_YOUR_GEMINI_API_KEY_HERE>") {
-      throw new Error("No API key provided (client-side).");
-    }
+  // Call backend proxy which forwards to Gemini multimodal endpoint
+  const callProxyGenerate = async ({ model = DEFAULT_MODEL, promptText = "", imageBase64 = null }) => {
+    const payload = { model, prompt: promptText };
+    if (imageBase64) payload.imageBase64 = imageBase64;
 
-    // Choose endpoint - many examples use generateText or generateContent. We'll attempt generateText.
-    // If your account requires a different endpoint shape, you may need to adapt the request body.
-    const url = `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(model)}:generateText?key=${API_KEY}`;
-
-    // Minimal request body: send prompt text, optionally attach the base64 as context in the prompt.
-    let prompt = promptText;
-    if (imageBase64) {
-      // We attach a short hint describing there's an image. Many APIs allow image attachments in special fields;
-      // attaching base64 inline in text isn't ideal, but some servers accept it. If your account expects a binary
-      // image field, you'll need a server that forwards multipart/JSON — see server example.
-      prompt += `\n\n[IMAGE_BASE64:${imageBase64.slice(0, 200)}...]\nProvide 3 short styling suggestions for this item in the category ${category}.`;
-    }
-
-    const body = {
-      // This shape may vary between API versions. If your project requires a different shape, adapt accordingly.
-      prompt: prompt,
-      maxOutputTokens: 256,
-      temperature: 0.7,
-    };
-
-    const resp = await fetch(url, {
+    const resp = await fetch(PROXY_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
     });
 
     if (!resp.ok) {
-      const text = await resp.text();
-      throw new Error(`Generative API error: ${resp.status} ${text}`);
+      const txt = await resp.text();
+      throw new Error(`Proxy error ${resp.status}: ${txt}`);
     }
-
     const json = await resp.json();
     return json;
   };
 
-  // Extract text suggestions from common response shapes. Returns an array of strings.
+  // Extract suggestions from many possible response shapes
   const extractSuggestionsFromResponse = (json) => {
     if (!json) return null;
 
-    // Heuristic 1: new-style candidate content arrays
-    // e.g. { candidates: [ { output: [{ content: "..." }] } ] } or { output: [{ content: "..." }] }
+    // Try common candidate/output shapes
     try {
-      // handle: json.candidates[0].output[0].content
-      const cand = json.candidates?.[0];
+      const cand = json.candidates?.[0] || json?.candidates?.[0];
       if (cand) {
-        const out0 = cand.output?.[0];
-        if (out0 && typeof out0.content === "string") {
-          return splitToSuggestions(out0.content);
+        const out0 = cand.output?.[0] || cand?.output;
+        if (out0) {
+          if (typeof out0.content === "string") return splitToSuggestions(out0.content);
+          if (Array.isArray(out0.content)) {
+            const joined = out0.content.map((c) => (typeof c === "string" ? c : c.text || c.content || "")).join(" ").trim();
+            if (joined) return splitToSuggestions(joined);
+          }
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    try {
+      const out0 = json.output?.[0] || json?.output;
+      if (out0) {
+        if (typeof out0.content === "string") return splitToSuggestions(out0.content);
+        if (Array.isArray(out0.content)) {
+          const joined = out0.content.map((c) => (typeof c === "string" ? c : c.text || c.content || "")).join(" ").trim();
+          if (joined) return splitToSuggestions(joined);
         }
       }
     } catch (e) {}
 
-    try {
-      // handle: json.output[0].content
-      const out0 = json.output?.[0];
-      if (out0 && typeof out0.content === "string") {
-        return splitToSuggestions(out0.content);
-      }
-    } catch (e) {}
-
-    // Older / other shapes: json.text or json.outputText or json.result
     if (typeof json.text === "string") return splitToSuggestions(json.text);
     if (typeof json.outputText === "string") return splitToSuggestions(json.outputText);
     if (typeof json.result === "string") return splitToSuggestions(json.result);
 
-    // As a last fallback, find any first string deeply
+    // Deep search for first long string
     const findFirstString = (obj) => {
       if (!obj) return null;
       if (typeof obj === "string") return obj;
@@ -258,36 +245,19 @@ export default function App() {
     const anyText = findFirstString(json);
     if (anyText) return splitToSuggestions(anyText);
 
-    // nothing usable
     return null;
   };
 
-  // Utility: split returned text into up to 3 suggestion strings
   const splitToSuggestions = (text) => {
     if (!text) return [];
-    // split using numbered list or newlines
-    // Normalize bullets and numbers to split
-    const lines = text
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter(Boolean);
-
-    // If many short lines, return first 3 lines
+    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     if (lines.length >= 3) return lines.slice(0, 3);
-
-    // Otherwise split by sentence punctuation (.), ? or ; into pieces
-    const sentences = text
-      .split(/(?<=\.)\s+|(?<=\?)\s+|(?<=\!)\s+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-
+    const sentences = text.split(/(?<=[.?!])\s+/).map((s) => s.trim()).filter(Boolean);
     if (sentences.length >= 3) return sentences.slice(0, 3);
-
-    // fallback: return single-element array with whole text
     return [text.trim()];
   };
 
-  // Main recommendation call
+  // Main getRecommendation
   const getRecommendation = async () => {
     setToast(null);
     setError("");
@@ -303,33 +273,28 @@ export default function App() {
 
     setLoading(true);
     try {
-      // convert image to base64 for potential inclusion
       const base64 = await toBase64(image);
+      const promptText = `You are a fashion assistant. Analyze the provided image and give 3 short styling suggestions for this ${category}. Keep each suggestion to one sentence.`;
 
-      // If a client API key is present in this file, try calling Gemini.
-      if (API_KEY && API_KEY.trim() !== "" && API_KEY !== "<PASTE_YOUR_GEMINI_API_KEY_HERE>") {
-        try {
-          const promptText = `You are a fashion assistant. Provide 3 concise styling suggestions for this item in the category "${category}". Keep suggestions short (one sentence each).`;
-          const json = await callGeminiGenerate({ model: DEFAULT_MODEL, promptText, imageBase64: base64 });
-          const suggestions = extractSuggestionsFromResponse(json);
-          if (suggestions && suggestions.length) {
-            setResults(suggestions.slice(0, 3));
-            setToast("Recommendations ready (from Gemini)");
-            setLoading(false);
-            return;
-          } else {
-            // if API returned but we couldn't parse, fall back to mock
-            console.warn("Generative API returned but no parseable text, falling back to local mock", json);
-          }
-        } catch (apiErr) {
-          console.error("Gemini call error:", apiErr);
-          // continue to fallback
+      try {
+        const json = await callProxyGenerate({ model: DEFAULT_MODEL, promptText, imageBase64: base64 });
+        console.log("Proxy response:", json);
+        const suggestions = extractSuggestionsFromResponse(json);
+        if (suggestions && suggestions.length) {
+          setResults(suggestions.slice(0, 3));
+          setToast("Recommendations ready (model)");
+          setLoading(false);
+          return;
+        } else {
+          console.warn("No parseable model output; falling back to local demo.");
         }
+      } catch (proxyErr) {
+        console.error("Proxy call error:", proxyErr);
       }
 
-      // Fallback: local mock suggestions
-      const suggestions = await generateLocalMock();
-      setResults(suggestions.slice(0, 3));
+      // fallback
+      const local = await generateLocalMock();
+      setResults(local.slice(0, 3));
       setToast("Recommendations ready (local demo)");
     } catch (e) {
       console.error(e);
@@ -339,16 +304,16 @@ export default function App() {
     }
   };
 
-  // Actions on each suggestion
+  // Actions for suggestions
   const speakText = (text) => {
     if (!("speechSynthesis" in window)) {
       setToast("Speech not supported");
       return;
     }
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "en-US";
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utter);
+    window.speechSynthesis.speak(u);
   };
 
   const copyText = async (text) => {
@@ -393,7 +358,7 @@ export default function App() {
   const clearVendorForm = () =>
     setVendorForm({ id: null, name: "", type: "T-Shirt", price: "", size: "M", color: "", description: "", imageFile: null });
 
-  const saveVendorItem = async (e) => {
+  const saveVendorItem = (e) => {
     e?.preventDefault();
     if (!vendorForm.name || !vendorForm.price) {
       setToast("Please provide name and price");
@@ -583,7 +548,7 @@ export default function App() {
 
             {loading && (
               <div className="loading-block">
-                <div className="spinner" aria-hidden />
+                <div className="spinner" aria-hidden></div>
                 <div className="loading-text">Analyzing image & preparing suggestions…</div>
               </div>
             )}
