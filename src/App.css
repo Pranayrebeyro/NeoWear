@@ -1,0 +1,199 @@
+/* Final App.css — stronger layout constraints to prevent vendor panel overlay */
+
+:root{
+  --bg: #f5f8ff;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: linear-gradient(135deg,#6366f1,#4f46e5);
+  --accent-plain: #6366f1;
+  --danger: #ef4444;
+  --glass: rgba(255,255,255,0.6);
+  --shadow: 0 12px 30px rgba(16,24,40,0.08);
+  --radius: 14px;
+  --text: #0f172a;
+  --success: #10b981;
+}
+
+[data-theme="dark"]{
+  --bg: #0b1020;
+  --card: rgba(6,10,20,0.6);
+  --muted: #9aa3b2;
+  --accent: linear-gradient(135deg,#7c3aed,#0ea5e9);
+  --accent-plain: #7c3aed;
+  --glass: rgba(255,255,255,0.03);
+  --shadow: 0 10px 30px rgba(2,6,23,0.6);
+  --text: #e6eef8;
+  --success: #34d399;
+}
+
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  margin:0;
+  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: radial-gradient(1200px 600px at 10% 10%, rgba(99,102,241,0.06), transparent),
+              linear-gradient(180deg,var(--bg), #fff);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding:20px;
+  overflow-x: hidden; /* block horizontal overflow */
+}
+
+/* Header */
+.tm-header{display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto 18px;padding:0 12px}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:56px;height:56px;border-radius:12px;background:var(--accent-plain);display:flex;align-items:center;justify-content:center;color:white;font-size:24px;box-shadow:var(--shadow)}
+.brand-title{margin:0;font-size:18px;font-weight:700}
+.brand-sub{font-size:12px;color:var(--muted)}
+.header-actions{display:flex;gap:10px;align-items:center}
+.theme-toggle{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px 10px;border-radius:8px;cursor:pointer}
+.theme-toggle:hover{opacity:0.9}
+
+/* Main layout:
+   - Left column shrinkable (minmax(0,1fr))
+   - Right column fixed to 420px and cannot grow
+*/
+.tm-main{
+  display:grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap:20px;
+  max-width:1200px;
+  margin:0 auto;
+  align-items:start;
+  padding: 0 12px;
+  min-width:0;
+}
+
+/* Left column */
+.left-col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.upload-card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,0.02);min-height:220px;display:flex;flex-direction:column;gap:12px;justify-content:center;align-items:center;cursor:pointer;position:relative;transition:transform .14s ease, box-shadow .14s ease}
+.upload-card:focus{outline:3px solid rgba(99,102,241,0.12)}
+.upload-card:hover{transform:translateY(-4px)}
+.upload-card.drag-over{box-shadow:0 18px 40px rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.25)}
+.drop-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px}
+.big-icon{font-size:36px}
+.drop-title{font-weight:700}
+.drop-sub{font-size:13px;color:var(--muted)}
+.drop-hint{font-size:12px;color:var(--muted)}
+.preview-inner{width:100%;position:relative}
+.preview-img{width:100%;border-radius:12px;display:block;max-height:360px;object-fit:contain;box-shadow:0 12px 28px rgba(2,6,23,0.06)}
+.remove-image{position:absolute;right:10px;top:10px;background:var(--danger);color:#fff;border:none;padding:6px 8px;border-radius:8px;cursor:pointer}
+
+/* Meta row */
+.meta-row{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:6px}
+.meta-item{font-size:13px}
+.subtle{color:var(--muted);font-size:12px}
+.small-btn{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:6px 10px;border-radius:10px;cursor:pointer}
+
+/* Controls */
+.controls{display:flex;flex-direction:column;gap:12px;padding:12px;border-radius:12px}
+.label{font-weight:700;color:var(--muted);font-size:13px}
+.select{padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:15px;min-width:0}
+.action-row{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
+.btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+.btn.primary{background:var(--accent);color:white;box-shadow:0 8px 20px rgba(79,70,229,0.12)}
+.btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.06)}
+.hint-row{display:flex;gap:8px;align-items:center;margin-top:12px}
+.hint{font-size:13px;color:var(--muted)}
+.hint.strong{font-weight:700;color:var(--text)}
+
+/* Right column (fixed) */
+.right-col{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  min-width:0;
+  flex:0 0 420px;
+  width:420px;
+  max-width:420px;
+  box-sizing:border-box;
+  align-self:start; /* keep right column aligned to top of grid row */
+}
+
+/* Panels */
+.panel{background:var(--card);padding:14px;border-radius:12px;box-shadow:var(--shadow);min-height:160px;overflow:visible}
+.panel.small{padding:12px;display:flex;flex-direction:column;gap:12px}
+.panel-title{margin:0 0 10px 0;font-size:15px}
+
+.empty{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted)}
+.empty-emoji{font-size:34px}
+.empty-text{text-align:center;font-size:13px;color:var(--muted)}
+
+.loading-block{display:flex;align-items:center;gap:12px}
+.spinner{width:28px;height:28px;border-radius:50%;border:4px solid rgba(0,0,0,0.06);border-left-color:var(--accent-plain);animation:spin 1s linear infinite}
+.spinner.large{width:52px;height:52px;border-width:6px;border-left-color:var(--accent-plain)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.loading-text{color:var(--muted)}
+
+.results-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px}
+.result-item{display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(99,102,241,0.03),transparent)}
+.result-index{width:36px;height:36px;border-radius:10px;background:var(--accent-plain);color:white;display:flex;align-items:center;justify-content:center;font-weight:700}
+.result-body{flex:1;display:flex;flex-direction:column;gap:8px}
+.result-text{font-size:15px}
+.result-actions{display:flex;gap:8px;align-items:center}
+.icon-btn{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:6px;border-radius:8px;cursor:pointer}
+
+/* Small panel */
+.small-actions{display:flex;gap:8px;flex-wrap:wrap}
+.tiny{padding:8px;border-radius:8px;border:none;background:rgba(0,0,0,0.04)}
+
+.credits{font-size:12px;color:var(--muted)}
+
+/* Footer */
+.tm-footer{max-width:1200px;margin:22px auto 0;display:flex;justify-content:space-between;color:var(--muted);font-size:13px;padding:0 12px}
+
+/* Overlay & toast */
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.35);z-index:80}
+.overlay-card{background:var(--card);padding:20px;border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:12px}
+.overlay-text{color:var(--muted);font-size:14px}
+.toast{position:fixed;right:20px;bottom:20px;background:linear-gradient(90deg,var(--accent-plain),#4f46e5);color:white;padding:10px 14px;border-radius:10px;box-shadow:var(--shadow);z-index:90}
+
+/* Errors */
+.error{color:var(--danger);font-weight:700;margin-top:8px}
+
+/* Vendor panel: make absolutely sure children cannot grow the right column */
+.vendor-panel{
+  max-height:520px;
+  overflow:auto;
+  box-sizing:border-box;
+  width:100%;
+  position:relative;
+  z-index:1; /* stays within flow */
+}
+
+/* allow nested children to shrink instead of growing the parent */
+.vendor-panel *{ min-width: 0; }
+
+/* ensure form controls are responsive and block-level where needed */
+.vendor-panel .select,
+.vendor-panel input[type="text"],
+.vendor-panel input[type="number"],
+.vendor-panel textarea,
+.vendor-panel input[type="file"]{
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* file input: block so it wraps below if necessary */
+.vendor-panel input[type="file"]{ display:block; width:100%; }
+
+/* inline groups wrap so they never push width */
+.vendor-panel form > div{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+/* ensure list items don't stretch the column */
+.vendor-panel ul li{ word-break:break-word; overflow:hidden; }
+
+/* make long text wrap/truncate */
+.vendor-panel .select,
+.vendor-panel input,
+.vendor-panel textarea{ overflow:hidden; text-overflow:ellipsis; }
+
+/* small screens: stack columns */
+@media (max-width: 980px) {
+  .tm-main{ grid-template-columns:1fr; padding-bottom:40px; }
+  .right-col{ width:100%; flex: 0 0 auto; }
+  .vendor-panel{ max-height:none; }
+}
